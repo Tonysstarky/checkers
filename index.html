@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="tk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Şaşka — 3D & 2D Checkers</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f111a;
+            --panel-bg: rgba(26, 31, 46, 0.85);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --red-piece: #ef4444;
+            --black-piece: #1e293b;
+            --accent-gold: #f59e0b;
+            --success: #10b981;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-dark);
+            color: #f1f5f9;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(ellipse at 15% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 45%),
+                radial-gradient(ellipse at 85% 80%, rgba(239, 68, 68, 0.12) 0%, transparent 45%),
+                linear-gradient(to bottom, #090a10, #131722);
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            width: 100%;
+            max-width: 1200px;
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(15, 17, 26, 0.6);
+            backdrop-filter: blur(12px);
+            z-index: 20;
+        }
+
+        .logo-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-color);
+            color: #94a3b8;
+            padding: 6px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .back-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.12); }
+
+        .logo-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            background: linear-gradient(135deg, #f43f5e, #fbbf24, #10b981, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .top-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: #cbd5e1;
+            padding: 7px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .icon-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; border-color: rgba(255, 255, 255, 0.25); }
+        .icon-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+        /* ===== MAIN GAME WRAPPER ===== */
+        .main-container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        /* ===== SIDE PANELS ===== */
+        .panel {
+            width: 250px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+        }
+
+        .card-title {
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Players widget */
+        .player-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 2px solid transparent;
+            margin-bottom: 8px;
+            transition: all 0.3s;
+        }
+
+        .player-row.active {
+            border-color: var(--accent-gold);
+            background: rgba(245, 158, 11, 0.1);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+            transform: scale(1.02);
+        }
+
+        .player-tag {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge-circle {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+        }
+        .badge-red { background: linear-gradient(135deg, #f87171, #dc2626); border: 2px solid #ef4444; }
+        .badge-black { background: linear-gradient(135deg, #475569, #0f172a); border: 2px solid #334155; }
+
+        .player-name {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .player-score {
+            font-size: 20px;
+            font-weight: 900;
+            font-family: 'Orbitron', monospace;
+            color: #fff;
+        }
+
+        /* Mode and settings buttons */
+        .btn-group {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .btn-toggle {
+            flex: 1;
+            padding: 8px 6px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: #94a3b8;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .btn-toggle:hover { color: #fff; background: rgba(255, 255, 255, 0.09); }
+        .btn-toggle.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 0 12px var(--primary-glow);
+        }
+
+        .diff-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+        .diff-btn {
+            padding: 7px 4px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            color: #94a3b8;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .diff-btn:hover { color: #fff; }
+        .diff-btn.active { background: #059669; border-color: #10b981; color: #fff; }
+
+        /* Action buttons */
+        .action-btn {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.05);
+            color: #f1f5f9;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            margin-bottom: 6px;
+        }
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-1px);
+        }
+        .btn-restart {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.3));
+            border-color: rgba(16, 185, 129, 0.4);
+            color: #34d399;
+        }
+        .btn-restart:hover { background: rgba(16, 185, 129, 0.35); color: #fff; }
+
+        /* Turn Status Banner */
+        .status-box {
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        .status-red {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+        }
+        .status-black {
+            background: rgba(51, 65, 85, 0.35);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            color: #cbd5e1;
+        }
+        .status-win {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.3));
+            border: 1px solid #f59e0b;
+            color: #fde68a;
+            font-size: 16px;
+            animation: pulse-glow 1.5s infinite;
+        }
+        .status-bot {
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.5);
+            color: #c7d2fe;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.2); }
+            50% { box-shadow: 0 0 25px rgba(245, 158, 11, 0.5); }
+        }
+
+        /* ===== BOARD CONTAINER ===== */
+        .board-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* 3D vs 2D board styling */
+        .board-stage {
+            perspective: 900px;
+            padding: 10px;
+            transition: all 0.5s ease;
+        }
+
+        .board-stage.mode-3d .board-outer {
+            transform: rotateX(24deg) rotateZ(0deg);
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.8),
+                0 0 40px rgba(99, 102, 241, 0.15),
+                inset 0 1px 1px rgba(255, 255, 255, 0.3);
+        }
+
+        .board-stage.mode-2d .board-outer {
+            transform: none;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+        }
+
+        .board-outer {
+            padding: 14px;
+            background: linear-gradient(135deg, #452410, #2e1607, #452410);
+            border-radius: 14px;
+            border: 4px solid #5a3014;
+            transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 62px);
+            grid-template-rows: repeat(8, 62px);
+            border: 2px solid #231206;
+            border-radius: 4px;
+            background: #2b180d;
+        }
+
+        /* Cells */
+        .cell {
+            width: 62px;
+            height: 62px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: default;
+            transition: background-color 0.2s;
+        }
+
+        .cell.light {
+            background: #f1dbc0;
+        }
+
+        .cell.dark {
+            background: #a26b3e;
+            box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Highlighting valid target cells */
+        .cell.valid-move {
+            cursor: pointer !important;
+            background-color: #6da766 !important;
+        }
+
+        .cell.valid-move::after {
+            content: '';
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #22c55e, #15803d);
+            box-shadow: 0 0 12px #22c55e;
+            animation: pulse-dot 1.2s infinite;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .cell.valid-capture {
+            cursor: pointer !important;
+            background-color: #be4b4b !important;
+        }
+
+        .cell.valid-capture::after {
+            content: '';
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ef4444, #991b1b);
+            border: 2px solid #fff;
+            box-shadow: 0 0 15px #ef4444;
+            animation: pulse-dot 0.8s infinite;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { transform: scale(0.9); opacity: 0.8; }
+            50% { transform: scale(1.15); opacity: 1; }
+        }
+
+        .cell.last-move-cell {
+            background-color: rgba(99, 102, 241, 0.5) !important;
+        }
+
+        /* ===== PIECES (ŞAŞKALAR) ===== */
+        .piece {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        /* RED PIECE */
+        .piece.red {
+            background: radial-gradient(circle at 35% 30%, #ff7171, #dc2626 65%, #991b1b);
+            border: 3px solid #b91c1c;
+            box-shadow: 
+                0 5px 8px rgba(0,0,0,0.5),
+                inset 0 3px 5px rgba(255, 255, 255, 0.5),
+                inset 0 -4px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        /* BLACK PIECE */
+        .piece.black {
+            background: radial-gradient(circle at 35% 30%, #64748b, #1e293b 65%, #0f172a);
+            border: 3px solid #0f172a;
+            box-shadow: 
+                0 5px 8px rgba(0,0,0,0.6),
+                inset 0 3px 5px rgba(255, 255, 255, 0.3),
+                inset 0 -4px 6px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Hover effect */
+        .piece.can-move:hover {
+            transform: scale(1.1) translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.6);
+        }
+
+        /* Selected piece */
+        .piece.selected {
+            transform: scale(1.15) translateY(-4px) !important;
+            box-shadow: 
+                0 0 0 4px #10b981,
+                0 12px 20px rgba(0, 0, 0, 0.7),
+                0 0 25px #10b981 !important;
+        }
+
+        /* Forced capture indicator */
+        .piece.must-jump {
+            animation: pulse-jump 1s infinite alternate;
+        }
+        @keyframes pulse-jump {
+            from { box-shadow: 0 0 0 2px #ef4444, 0 5px 10px rgba(0,0,0,0.5); }
+            to { box-shadow: 0 0 0 5px #f59e0b, 0 0 20px #f59e0b; }
+        }
+
+        /* King (Damka) crown */
+        .piece.king::before {
+            content: '👑';
+            font-size: 24px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+            animation: crown-glow 2s infinite ease-in-out;
+        }
+
+        @keyframes crown-glow {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px gold); }
+            50% { transform: scale(1.15); filter: drop-shadow(0 0 10px gold); }
+        }
+
+        /* Piece inner ring styling */
+        .piece::after {
+            content: '';
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            pointer-events: none;
+        }
+
+        /* Coordinates */
+        .coords-x {
+            display: flex;
+            width: 496px;
+            justify-content: space-around;
+            font-size: 12px;
+            font-weight: 700;
+            color: #94a3b8;
+            font-family: 'Orbitron', monospace;
+            padding: 4px 0;
+        }
+        .coords-y {
+            display: flex;
+            flex-direction: column;
+            height: 496px;
+            justify-content: space-around;
+            font-size: 12px;
+            font-weight: 700;
+            color: #94a3b8;
+            font-family: 'Orbitron', monospace;
+            padding: 0 6px;
+        }
+        .board-with-y {
+            display: flex;
+            align-items: center;
+        }
+
+        /* Move history log */
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-family: 'Orbitron', monospace;
+            font-size: 11px;
+            padding-right: 4px;
+        }
+        .history-list::-webkit-scrollbar { width: 4px; }
+        .history-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+            border-left: 3px solid transparent;
+        }
+        .history-item.red { border-left-color: #ef4444; }
+        .history-item.black { border-left-color: #64748b; }
+
+        /* Win Dialog Modal */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-backdrop.show { display: flex; }
+
+        .modal-card {
+            background: #1e2433;
+            border: 2px solid var(--accent-gold);
+            border-radius: 20px;
+            padding: 36px 44px;
+            text-align: center;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(245, 158, 11, 0.3);
+            max-width: 420px;
+            animation: modal-pop 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        @keyframes modal-pop {
+            from { transform: scale(0.6) translateY(40px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .modal-trophy { font-size: 64px; margin-bottom: 12px; }
+        .modal-title { font-family: 'Orbitron', sans-serif; font-size: 26px; font-weight: 900; color: #fbbf24; margin-bottom: 8px; }
+        .modal-desc { color: #cbd5e1; font-size: 14px; margin-bottom: 24px; }
+
+        /* Confetti */
+        .confetti-particle {
+            position: fixed;
+            top: -10px;
+            z-index: 101;
+            pointer-events: none;
+            animation: confetti-fall linear forwards;
+        }
+        @keyframes confetti-fall {
+            to { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Responsive */
+        @media (max-width: 950px) {
+            .main-container { flex-direction: column; align-items: center; }
+            .panel { width: 100%; max-width: 496px; }
+            .board-grid { grid-template-columns: repeat(8, 48px); grid-template-rows: repeat(8, 48px); }
+            .cell { width: 48px; height: 48px; }
+            .piece { width: 38px; height: 38px; }
+            .coords-x { width: 384px; }
+            .coords-y { height: 384px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOP HEADER -->
+    <header class="header">
+        <div class="logo-wrap">
+            <a href="/" class="back-btn">← <span data-i18n="home">Baş sahypa</span></a>
+            <div class="logo-text">ŞAŞKA 3D</div>
+        </div>
+
+        <div class="top-controls">
+            <!-- 3D / 2D Toggle -->
+            <button class="icon-btn" id="btn-view" onclick="toggleViewMode()">
+                🕹️ <span id="view-label">3D Görünüş</span>
+            </button>
+            <!-- Sound Toggle -->
+            <button class="icon-btn active" id="btn-sound" onclick="toggleSound()">
+                🔊 <span id="sound-label">Ses Açyk</span>
+            </button>
+            <!-- Languages -->
+            <button class="icon-btn" onclick="setLang('tk')">🇹🇲 TK</button>
+            <button class="icon-btn" onclick="setLang('ru')">🇷🇺 RU</button>
+            <button class="icon-btn" onclick="setLang('tr')">🇹🇷 TR</button>
+        </div>
+    </header>
+
+    <!-- MAIN GAME AREA -->
+    <main class="main-container">
+        
+        <!-- LEFT PANEL: Players & Settings -->
+        <aside class="panel">
+            <!-- Player Status -->
+            <div class="card">
+                <div class="card-title">
+                    <span data-i18n="players">Oýunçylar</span>
+                </div>
+
+                <div class="player-row active" id="row-red">
+                    <div class="player-tag">
+                        <div class="badge-circle badge-red">🔴</div>
+                        <div>
+                            <div class="player-name" id="name-red" data-i18n="playerRed">Gyzyl (Siz)</div>
+                            <small style="color:#94a3b8;font-size:10px;" data-i18n="pieces">Daş sany</small>
+                        </div>
+                    </div>
+                    <div class="player-score" id="score-red">12</div>
+                </div>
+
+                <div class="player-row" id="row-black">
+                    <div class="player-tag">
+                        <div class="badge-circle badge-black">⚫</div>
+                        <div>
+                            <div class="player-name" id="name-black" data-i18n="playerBot">Gara (Bot)</div>
+                            <small style="color:#94a3b8;font-size:10px;" data-i18n="pieces">Daş sany</small>
+                        </div>
+                    </div>
+                    <div class="player-score" id="score-black">12</div>
+                </div>
+            </div>
+
+            <!-- Game Mode -->
+            <div class="card">
+                <div class="card-title"><span data-i18n="mode">Oýun Režimi</span></div>
+                <div class="btn-group">
+                    <button class="btn-toggle active" id="mode-bot" onclick="setGameMode('bot')">🤖 <span data-i18n="vsBot">Bot bilen</span></button>
+                    <button class="btn-toggle" id="mode-pvp" onclick="setGameMode('pvp')">👥 <span data-i18n="vsPvp">2 Oýunçy</span></button>
+                </div>
+
+                <!-- Bot Difficulty -->
+                <div id="diff-section" style="margin-top: 10px;">
+                    <div class="card-title" style="margin-bottom:6px;"><span data-i18n="difficulty">Kynçylyk</span></div>
+                    <div class="diff-grid">
+                        <button class="diff-btn" id="diff-1" onclick="setDifficulty(1)"><span data-i18n="easy">Aňsat</span></button>
+                        <button class="diff-btn active" id="diff-2" onclick="setDifficulty(2)"><span data-i18n="medium">Orta</span></button>
+                        <button class="diff-btn" id="diff-3" onclick="setDifficulty(3)"><span data-i18n="hard">Kyn</span></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rules Option -->
+            <div class="card">
+                <div class="card-title"><span data-i18n="rules">Düzgünler</span></div>
+                <button class="action-btn" id="btn-forced" onclick="toggleForcedJump()">
+                    ⚖️ <span id="forced-label" data-i18n="forcedOn">Hökmany iýmek: Hawa</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- CENTER: BOARD -->
+        <section class="board-wrapper">
+            <!-- Turn Banner -->
+            <div class="status-box status-red" id="turn-banner">
+                🔴 <span id="turn-text" data-i18n="turnRed">Gyzylyň gezegi (Siziňki)</span>
+            </div>
+
+            <!-- 3D/2D Stage -->
+            <div class="board-stage mode-3d" id="board-stage">
+                <div class="coords-x">
+                    <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span>
+                </div>
+                <div class="board-with-y">
+                    <div class="coords-y">
+                        <span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span>
+                    </div>
+                    <div class="board-outer">
+                        <div class="board-grid" id="board-grid"></div>
+                    </div>
+                    <div class="coords-y">
+                        <span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span>
+                    </div>
+                </div>
+                <div class="coords-x">
+                    <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- RIGHT PANEL: Actions & History -->
+        <aside class="panel">
+            <div class="card">
+                <div class="card-title"><span data-i18n="actions">Hereketler</span></div>
+                <button class="action-btn btn-restart" onclick="restartGame()">
+                    🔄 <span data-i18n="newGame">Täze Oýun</span>
+                </button>
+                <button class="action-btn" onclick="undoMove()">
+                    ↩️ <span data-i18n="undo">Yza Almak</span>
+                </button>
+                <button class="action-btn" onclick="giveHint()">
+                    💡 <span data-i18n="hint">Maslahat (Komek)</span>
+                </button>
+            </div>
+
+            <!-- Captured pieces info -->
+            <div class="card">
+                <div class="card-title"><span data-i18n="captured">Ýeňilen Daşlar</span></div>
+                <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
+                    <span>🔴 <span data-i18n="redLost">Gyzyl ýitgi</span>:</span>
+                    <strong id="lost-red" style="color:#f87171;">0</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:13px;">
+                    <span>⚫ <span data-i18n="blackLost">Gara ýitgi</span>:</span>
+                    <strong id="lost-black" style="color:#94a3b8;">0</strong>
+                </div>
+            </div>
+
+            <!-- Move History -->
+            <div class="card">
+                <div class="card-title"><span data-i18n="history">Göçümler Taryhy</span></div>
+                <div class="history-list" id="history-box">
+                    <div style="color:#64748b; font-size:11px; text-align:center;" data-i18n="noMoves">Heniz göçüm ýok</div>
+                </div>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- WIN DIALOG MODAL -->
+    <div class="modal-backdrop" id="win-modal">
+        <div class="modal-card">
+            <div class="modal-trophy">🏆</div>
+            <div class="modal-title" id="win-title">Gyzyl Ýeňdi!</div>
+            <div class="modal-desc" id="win-desc">Gowy oýun boldy! Gutlaýarys!</div>
+            <button class="action-btn btn-restart" onclick="closeModalAndRestart()" style="padding:14px;">
+                🔄 <span data-i18n="playAgain">Ýene Oýna</span>
+            </button>
+        </div>
+    </div>
+
+<script>
+// ==========================================
+// 1. DILLER (MULTI-LANGUAGE SUPPORT)
+// ==========================================
+const TRANSLATIONS = {
+    tk: {
+        home: "Baş sahypa",
+        players: "Oýunçylar",
+        playerRed: "Gyzyl (Siz)",
+        playerBot: "Gara (Bot)",
+        playerBlackPvp: "Gara (2-nji oýunçy)",
+        pieces: "Daş sany",
+        mode: "Oýun Režimi",
+        vsBot: "Bot bilen",
+        vsPvp: "2 Oýunçy",
+        difficulty: "Kynçylyk",
+        easy: "Aňsat",
+        medium: "Orta",
+        hard: "Kyn",
+        rules: "Düzgünler",
+        forcedOn: "Hökmany iýmek: Hawa",
+        forcedOff: "Hökmany iýmek: Ýok",
+        turnRed: "Gyzylyň gezegi (Siziňki)",
+        turnBlack: "Garanyň gezegi",
+        turnBot: "🤖 Bot pikir edýär...",
+        actions: "Hereketler",
+        newGame: "Täze Oýun",
+        undo: "Yza Almak",
+        hint: "Maslahat (Kömek)",
+        captured: "Ýeňilen Daşlar",
+        redLost: "Gyzyl ýitgi",
+        blackLost: "Gara ýitgi",
+        history: "Göçümler Taryhy",
+        noMoves: "Heniz göçüm ýok",
+        winRed: "🎉 Gyzyl Ýeňdi!",
+        winBlack: "🎉 Gara Ýeňdi!",
+        winBot: "🤖 Bot Ýeňdi!",
+        winDesc: "Gowy oýun boldy! Gutlaýarys!",
+        playAgain: "Ýene Oýna",
+        view3d: "3D Görünüş",
+        view2d: "2D Görünüş",
+        soundOn: "Ses Açyk",
+        soundOff: "Ses Ýapyk",
+        mustCaptureAlert: "⚠️ Hökman iýmeli daş bar!"
+    },
+    ru: {
+        home: "Главная",
+        players: "Игроки",
+        playerRed: "Красные (Вы)",
+        playerBot: "Чёрные (Бот)",
+        playerBlackPvp: "Чёрные (Игрок 2)",
+        pieces: "Кол-во шашек",
+        mode: "Режим Игры",
+        vsBot: "Против Бота",
+        vsPvp: "2 Игрока",
+        difficulty: "Сложность",
+        easy: "Легко",
+        medium: "Средне",
+        hard: "Сложно",
+        rules: "Правила",
+        forcedOn: "Обязательный бой: Да",
+        forcedOff: "Обязательный бой: Нет",
+        turnRed: "Ход Красных (Ваш)",
+        turnBlack: "Ход Чёрных",
+        turnBot: "🤖 Бот думает...",
+        actions: "Действия",
+        newGame: "Новая Игра",
+        undo: "Шаг назад",
+        hint: "Подсказка",
+        captured: "Сбитые шашки",
+        redLost: "Потери красных",
+        blackLost: "Потери чёрных",
+        history: "История ходов",
+        noMoves: "Ходов пока нет",
+        winRed: "🎉 Красные победили!",
+        winBlack: "🎉 Чёрные победили!",
+        winBot: "🤖 Бот победил!",
+        winDesc: "Отличная игра! Поздравляем!",
+        playAgain: "Играть снова",
+        view3d: "3D Вид",
+        view2d: "2D Вид",
+        soundOn: "Звук Вкл",
+        soundOff: "Звук Выкл",
+        mustCaptureAlert: "⚠️ Есть обязательное взятие шашки!"
+    },
+    tr: {
+        home: "Ana Sayfa",
+        players: "Oyuncular",
+        playerRed: "Kırmızı (Siz)",
+        playerBot: "Siyah (Bot)",
+        playerBlackPvp: "Siyah (2. Oyuncu)",
+        pieces: "Taş sayısı",
+        mode: "Oyun Modu",
+        vsBot: "Bot ile",
+        vsPvp: "2 Kişilik",
+        difficulty: "Zorluk",
+        easy: "Kolay",
+        medium: "Orta",
+        hard: "Zor",
+        rules: "Kurallar",
+        forcedOn: "Zorunlu Yeme: Evet",
+        forcedOff: "Zorunlu Yeme: Hayır",
+        turnRed: "Sıra Kırmızıda (Sizin)",
+        turnBlack: "Sıra Siyahda",
+        turnBot: "🤖 Bot düşünüyor...",
+        actions: "İşlemler",
+        newGame: "Yeni Oyun",
+        undo: "Geri Al",
+        hint: "İpucu",
+        captured: "Yenilen Taşlar",
+        redLost: "Kırmızı kayıp",
+        blackLost: "Siyah kayıp",
+        history: "Hamle Geçmişi",
+        noMoves: "Henüz hamle yok",
+        winRed: "🎉 Kırmızı Kazandı!",
+        winBlack: "🎉 Siyah Kazandı!",
+        winBot: "🤖 Bot Kazandı!",
+        winDesc: "Tebrikler, harika oyun!",
+        playAgain: "Tekrar Oyna",
+        view3d: "3D Görünüm",
+        view2d: "2D Görünüm",
+        soundOn: "Ses Açık",
+        soundOff: "Ses Kapalı",
+        mustCaptureAlert: "⚠️ Zorunlu yeme hamlesi var!"
+    }
+};
+
+let currentLang = 'tk';
+function t(key) {
+    return TRANSLATIONS[currentLang][key] || key;
+}
+
+function setLang(lang) {
+    currentLang = lang;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const k = el.getAttribute('data-i18n');
+        if (TRANSLATIONS[lang][k]) el.textContent = TRANSLATIONS[lang][k];
+    });
+    updateLabels();
+}
+
+// ==========================================
+// 2. SES EFECKTLERI (WEB AUDIO API SINTETIZATOR)
+// ==========================================
+let soundEnabled = true;
+let audioCtx = null;
+
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+}
+
+function playSound(type) {
+    if (!soundEnabled) return;
+    initAudio();
+    if (!audioCtx) return;
+
+    try {
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'move') {
+            // Wood knock sound
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(220, now);
+            osc.frequency.exponentialRampToValueAtTime(110, now + 0.08);
+            gain.gain.setValueAtTime(0.5, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+            osc.start(now);
+            osc.stop(now + 0.08);
+        } else if (type === 'capture') {
+            // Crisp capture sound
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(350, now);
+            osc.frequency.exponentialRampToValueAtTime(150, now + 0.15);
+            gain.gain.setValueAtTime(0.4, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            osc.start(now);
+            osc.stop(now + 0.15);
+        } else if (type === 'king') {
+            // Fanfare note
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523.25, now); // C5
+            osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+            osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+            osc.start(now);
+            osc.stop(now + 0.35);
+        } else if (type === 'win') {
+            // Victory melody
+            [523, 659, 784, 1046].forEach((freq, idx) => {
+                const o = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                o.connect(g);
+                g.connect(audioCtx.destination);
+                o.frequency.value = freq;
+                g.gain.setValueAtTime(0.3, now + idx * 0.12);
+                g.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.2);
+                o.start(now + idx * 0.12);
+                o.stop(now + idx * 0.12 + 0.2);
+            });
+        }
+    } catch(e) {
+        console.warn('Audio error:', e);
+    }
+}
+
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    const btn = document.getElementById('btn-sound');
+    btn.classList.toggle('active', soundEnabled);
+    document.getElementById('sound-label').textContent = soundEnabled ? t('soundOn') : t('soundOff');
+}
+
+// 3D / 2D Görünüş Toggle
+let is3D = true;
+function toggleViewMode() {
+    is3D = !is3D;
+    const stage = document.getElementById('board-stage');
+    stage.classList.toggle('mode-3d', is3D);
+    stage.classList.toggle('mode-2d', !is3D);
+    document.getElementById('view-label').textContent = is3D ? t('view3d') : t('view2d');
+    document.getElementById('btn-view').classList.toggle('active', is3D);
+}
+
+// ==========================================
+// 3. ŞAŞKA LOGIKASY WE HEREKET MEHANIKASY
+// ==========================================
+const EMPTY = 0;
+const RED = 1;
+const BLACK = 2;
+const RED_KING = 3;
+const BLACK_KING = 4;
+
+const COLS = ['A','B','C','D','E','F','G','H'];
+
+let board = [];
+let currentPlayer = RED; // RED = oýunçy / 1-nji, BLACK = bot / 2-nji
+let gameMode = 'bot';    // 'bot' ýa-da 'pvp'
+let botDifficulty = 2;   // 1=Aňsat, 2=Orta, 3=Kyn
+let forcedJump = true;   // Hökmany iýmek
+let selectedCoord = null;// [r, c]
+let currentValidMoves = []; // Saýlanan daşyň göçüp bilýän nokatlary
+let multiJumpPiece = null;// Çynjyrly böküş edýän daş
+let isGameOver = false;
+let isBotThinking = false;
+let lastMoveCoords = null;
+let moveHistory = [];    // Yza almak üçin snapshotlar
+
+function initGame() {
+    board = [];
+    for (let r = 0; r < 8; r++) {
+        board[r] = [];
+        for (let c = 0; c < 8; c++) {
+            // Şaşka diňe gara öýjüklerde bolýar: (r + c) % 2 === 1
+            if ((r + c) % 2 === 1) {
+                if (r < 3) board[r][c] = BLACK;
+                else if (r > 4) board[r][c] = RED;
+                else board[r][c] = EMPTY;
+            } else {
+                board[r][c] = EMPTY;
+            }
+        }
+    }
+    currentPlayer = RED;
+    selectedCoord = null;
+    currentValidMoves = [];
+    multiJumpPiece = null;
+    isGameOver = false;
+    isBotThinking = false;
+    lastMoveCoords = null;
+    moveHistory = [];
+    document.getElementById('history-box').innerHTML = `<div style="color:#64748b; font-size:11px; text-align:center;">${t('noMoves')}</div>`;
+    renderBoard();
+}
+
+function isRedPiece(val) { return val === RED || val === RED_KING; }
+function isBlackPiece(val) { return val === BLACK || val === BLACK_KING; }
+function isKingPiece(val) { return val === RED_KING || val === BLACK_KING; }
+function getPieceOwner(val) {
+    if (isRedPiece(val)) return RED;
+    if (isBlackPiece(val)) return BLACK;
+    return EMPTY;
+}
+
+// Belli bir daş üçin ähli göçümleri hasaplamak
+function getMovesForPiece(r, c, bState, player) {
+    const val = bState[r][c];
+    if (val === EMPTY || getPieceOwner(val) !== player) {
+        return { steps: [], jumps: [] };
+    }
+
+    const steps = [];
+    const jumps = [];
+    const isKing = isKingPiece(val);
+
+    // Diagonal ugurlar
+    let directions = [];
+    if (isKing) {
+        directions = [[-1,-1], [-1,1], [1,-1], [1,1]];
+    } else if (player === RED) {
+        // Gyzyl ýokaryk (-1) ýöreýär
+        directions = [[-1,-1], [-1,1]];
+    } else {
+        // Gara aşak (+1) ýöreýär
+        directions = [[1,-1], [1,1]];
+    }
+
+    // 1. Adaty ädimler (Steps)
+    for (const [dr, dc] of directions) {
+        const nr = r + dr;
+        const nc = c + dc;
+        if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+            if (bState[nr][nc] === EMPTY) {
+                steps.push({ from: [r, c], to: [nr, nc], jumped: null });
+            }
+        }
+    }
+
+    // 2. Böküp iýmek (Jumps) - Şaşka hem öňe, hem yza iýip biler!
+    // Klassik şaşkada adaty daş hem 4 ugra böküp iýip bilýär
+    const jumpDirections = [[-1,-1], [-1,1], [1,-1], [1,1]];
+    for (const [dr, dc] of jumpDirections) {
+        const midR = r + dr;
+        const midC = c + dc;
+        const toR = r + (dr * 2);
+        const toC = c + (dc * 2);
+
+        if (toR >= 0 && toR < 8 && toC >= 0 && toC < 8) {
+            const midPiece = bState[midR][midC];
+            const toPiece = bState[toR][toC];
+
+            // Ortadaky garşydaşyň daşy bolsa we baryljak öýjük boş bolsa
+            if (midPiece !== EMPTY && getPieceOwner(midPiece) !== player && toPiece === EMPTY) {
+                jumps.push({ from: [r, c], to: [toR, toC], jumped: [midR, midC] });
+            }
+        }
+    }
+
+    return { steps, jumps };
+}
+
+// Bütin tahta boýunça bir oýunçynyň ähli göçümleri
+function getAllPlayerMoves(bState, player) {
+    let allSteps = [];
+    let allJumps = [];
+
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            if (getPieceOwner(bState[r][c]) === player) {
+                const { steps, jumps } = getMovesForPiece(r, c, bState, player);
+                allSteps = allSteps.concat(steps);
+                allJumps = allJumps.concat(jumps);
+            }
+        }
+    }
+
+    // Eger hökmany iýmek AÇYK bolsa we iýip bolýan daş bar bolsa: diňe böküşler rugsat
+    if (forcedJump && allJumps.length > 0) {
+        return { moves: allJumps, mustJump: true };
+    }
+    return { moves: allJumps.concat(allSteps), mustJump: allJumps.length > 0 };
+}
+
+// ==========================================
+// 4. RENDERING & UI GÖRKEZMEK
+// ==========================================
+function renderBoard() {
+    const gridEl = document.getElementById('board-grid');
+    gridEl.innerHTML = '';
+
+    const { moves: allAvailableMoves, mustJump } = getAllPlayerMoves(board, currentPlayer);
+
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const cell = document.createElement('div');
+            const isDark = (r + c) % 2 === 1;
+            cell.className = `cell ${isDark ? 'dark' : 'light'}`;
+            cell.dataset.row = r;
+            cell.dataset.col = c;
+
+            // Soňky edilen göçümi görkezmek
+            if (lastMoveCoords && ((lastMoveCoords.from[0] === r && lastMoveCoords.from[1] === c) ||
+                                  (lastMoveCoords.to[0] === r && lastMoveCoords.to[1] === c))) {
+                cell.classList.add('last-move-cell');
+            }
+
+            // Valid target highlights
+            if (selectedCoord) {
+                const targetMove = currentValidMoves.find(m => m.to[0] === r && m.to[1] === c);
+                if (targetMove) {
+                    if (targetMove.jumped) {
+                        cell.classList.add('valid-capture');
+                    } else {
+                        cell.classList.add('valid-move');
+                    }
+                }
+            }
+
+            // Cell click handler
+            cell.onclick = (e) => onCellClick(r, c);
+
+            // Piece (Şaşka) rendering
+            const val = board[r][c];
+            if (val !== EMPTY) {
+                const piece = document.createElement('div');
+                const isRed = isRedPiece(val);
+                piece.className = `piece ${isRed ? 'red' : 'black'}`;
+
+                if (isKingPiece(val)) piece.classList.add('king');
+
+                // Saýlanan bolsa
+                if (selectedCoord && selectedCoord[0] === r && selectedCoord[1] === c) {
+                    piece.classList.add('selected');
+                }
+
+                // Eger bu oýunçynyň gezegi bolsa we göçüp bilýän bolsa
+                const isCurrentPlayerPiece = getPieceOwner(val) === currentPlayer;
+                if (isCurrentPlayerPiece && !isBotThinking && !isGameOver) {
+                    piece.classList.add('can-move');
+
+                    // Hökmany iýmek indikatory
+                    if (forcedJump && mustJump) {
+                        const pieceJumps = allAvailableMoves.filter(m => m.from[0] === r && m.from[1] === c && m.jumped);
+                        if (pieceJumps.length > 0) {
+                            piece.classList.add('must-jump');
+                        }
+                    }
+                }
+
+                cell.appendChild(piece);
+            }
+
+            gridEl.appendChild(cell);
+        }
+    }
+
+    updateDashboard();
+}
+
+function updateDashboard() {
+    let countRed = 0, countBlack = 0;
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            if (isRedPiece(board[r][c])) countRed++;
+            if (isBlackPiece(board[r][c])) countBlack++;
+        }
+    }
+
+    document.getElementById('score-red').textContent = countRed;
+    document.getElementById('score-black').textContent = countBlack;
+    document.getElementById('lost-red').textContent = 12 - countRed;
+    document.getElementById('lost-black').textContent = 12 - countBlack;
+
+    // Turn banner
+    const banner = document.getElementById('turn-banner');
+    const turnText = document.getElementById('turn-text');
+    const rowRed = document.getElementById('row-red');
+    const rowBlack = document.getElementById('row-black');
+
+    rowRed.classList.toggle('active', currentPlayer === RED);
+    rowBlack.classList.toggle('active', currentPlayer === BLACK);
+
+    if (isGameOver) {
+        banner.className = 'status-box status-win';
+        return;
+    }
+
+    if (isBotThinking) {
+        banner.className = 'status-box status-bot';
+        turnText.textContent = t('turnBot');
+    } else if (currentPlayer === RED) {
+        banner.className = 'status-box status-red';
+        turnText.textContent = t('turnRed');
+    } else {
+        banner.className = 'status-box status-black';
+        turnText.textContent = t('turnBlack');
+    }
+}
+
+// ==========================================
+// 5. OÝUNÇYNYŇ BASYŞ (CLICK) MEHANIKASY
+// ==========================================
+function onCellClick(r, c) {
+    if (isGameOver || isBotThinking) return;
+
+    // Eger bot režiminde bolsa we häzir Garanyň (bot) gezegi bolsa, oýunçy el degrip bilmez
+    if (gameMode === 'bot' && currentPlayer === BLACK) return;
+
+    const clickedVal = board[r][c];
+    const isOwner = getPieceOwner(clickedVal) === currentPlayer;
+
+    // 1. Eger öň daş saýlanan bolsa we ulanyjy mümkin bolan göçüm öýjügine bassa:
+    if (selectedCoord) {
+        const move = currentValidMoves.find(m => m.to[0] === r && m.to[1] === c);
+        if (move) {
+            executeMove(move);
+            return;
+        }
+    }
+
+    // 2. Eger çynjyrly böküş bolup duran bolsa, başga daşa geçip bolmaz!
+    if (multiJumpPiece) {
+        return;
+    }
+
+    // 3. Oýunçy öz daşyna bassa (daşy saýlamak / çalyşmak):
+    if (isOwner) {
+        const { moves: allMoves, mustJump } = getAllPlayerMoves(board, currentPlayer);
+
+        // Bu daşyň göçümleri
+        let pieceMoves = allMoves.filter(m => m.from[0] === r && m.from[1] === c);
+
+        // Eger hökmany iýmek düzgüni açyk bolsa we bu daş iýip bilmeýän bolsa, başga daş iýýän bolsa
+        if (forcedJump && mustJump) {
+            const hasJump = pieceMoves.some(m => m.jumped !== null);
+            if (!hasJump) {
+                // Duýduryş ses/animasiýa
+                const banner = document.getElementById('turn-banner');
+                banner.textContent = t('mustCaptureAlert');
+                setTimeout(updateDashboard, 1500);
+                return;
+            }
+            // Diňe böküşleri rugsat ber
+            pieceMoves = pieceMoves.filter(m => m.jumped !== null);
+        }
+
+        selectedCoord = [r, c];
+        currentValidMoves = pieceMoves;
+        playSound('move');
+        renderBoard();
+        return;
+    }
+
+    // 4. Eger boş ýere basylsa we ol mümkin göçüm däl bolsa: saýlamany aýyr
+    if (!multiJumpPiece) {
+        selectedCoord = null;
+        currentValidMoves = [];
+        renderBoard();
+    }
+}
+
+// ==========================================
+// 6. GÖÇÜMI YERINE YETIRMEK (EXECUTE MOVE)
+// ==========================================
+function executeMove(move) {
+    // Snapshot ýazmak (Undo üçin)
+    saveSnapshot();
+
+    const [fr, fc] = move.from;
+    const [tr, tc] = move.to;
+    const pieceVal = board[fr][fc];
+
+    // Daşy göçürmek
+    board[tr][tc] = pieceVal;
+    board[fr][fc] = EMPTY;
+    lastMoveCoords = { from: [fr, fc], to: [tr, tc] };
+
+    let isCaptured = false;
+    // Eger böküp iýen bolsa
+    if (move.jumped) {
+        const [jr, jc] = move.jumped;
+        board[jr][jc] = EMPTY;
+        isCaptured = true;
+        playSound('capture');
+    } else {
+        playSound('move');
+    }
+
+    // Damka (King) bolma barlagy
+    let becameKing = false;
+    if (currentPlayer === RED && tr === 0 && pieceVal === RED) {
+        board[tr][tc] = RED_KING;
+        becameKing = true;
+        playSound('king');
+    } else if (currentPlayer === BLACK && tr === 7 && pieceVal === BLACK) {
+        board[tr][tc] = BLACK_KING;
+        becameKing = true;
+        playSound('king');
+    }
+
+    // Taryha ýazmak
+    logHistoryMove(move, isCaptured, becameKing);
+
+    // Çynjyrly böküş (Multi-jump) barlagy
+    // Eger iýen bolsa we ýaňyja damka bolmadyk bolsa, ýene böküp bilýärmi?
+    if (isCaptured && !becameKing) {
+        const { jumps: nextJumps } = getMovesForPiece(tr, tc, board, currentPlayer);
+        if (nextJumps.length > 0) {
+            multiJumpPiece = [tr, tc];
+            selectedCoord = [tr, tc];
+            currentValidMoves = nextJumps;
+            renderBoard();
+            
+            // Eger bot bolsa, indiki böküşi özi dowam etmeli
+            if (gameMode === 'bot' && currentPlayer === BLACK) {
+                setTimeout(botContinueMultiJump, 450);
+            }
+            return;
+        }
+    }
+
+    // Gezek tamamlandy
+    multiJumpPiece = null;
+    selectedCoord = null;
+    currentValidMoves = [];
+
+    // Oýun tamamlandymy?
+    const nextPlayer = (currentPlayer === RED) ? BLACK : RED;
+    if (checkGameEnd(nextPlayer)) {
+        renderBoard();
+        return;
+    }
+
+    // Gezeki çalyş
+    currentPlayer = nextPlayer;
+    renderBoard();
+
+    // Eger Botuň gezegi bolsa we bot režimi bolsa
+    if (gameMode === 'bot' && currentPlayer === BLACK && !isGameOver) {
+        isBotThinking = true;
+        updateDashboard();
+        setTimeout(playBotMove, 600);
+    }
+}
+
+// ==========================================
+// 7. BOT A.I. LOGIKASY (INTELLIGENT BOT)
+// ==========================================
+function playBotMove() {
+    if (isGameOver) { isBotThinking = false; return; }
+
+    const { moves: availableMoves } = getAllPlayerMoves(board, BLACK);
+    if (availableMoves.length === 0) {
+        endGame(RED);
+        isBotThinking = false;
+        return;
+    }
+
+    let chosenMove = null;
+
+    if (botDifficulty === 1) {
+        // AŇSAT (Easy): Tötänleýin (Random) göçüm
+        chosenMove = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+    } else {
+        // ORTA / KYN: Minimax we akylly baha bermek
+        let bestScore = -Infinity;
+        const depth = (botDifficulty === 3) ? 3 : 2;
+
+        for (const m of availableMoves) {
+            const nextB = cloneBoard(board);
+            applyMoveToVirtualBoard(nextB, m, BLACK);
+            const score = minimax(nextB, depth, -Infinity, Infinity, false);
+            if (score > bestScore) {
+                bestScore = score;
+                chosenMove = m;
+            }
+        }
+    }
+
+    if (!chosenMove) chosenMove = availableMoves[0];
+
+    isBotThinking = false;
+    executeMove(chosenMove);
+}
+
+function botContinueMultiJump() {
+    if (isGameOver || !multiJumpPiece) return;
+    const { jumps } = getMovesForPiece(multiJumpPiece[0], multiJumpPiece[1], board, BLACK);
+    if (jumps.length > 0) {
+        const nextJump = jumps[0];
+        executeMove(nextJump);
+    }
+}
+
+// Virtual tahta üçin göçüm
+function applyMoveToVirtualBoard(b, m, player) {
+    const [fr, fc] = m.from;
+    const [tr, tc] = m.to;
+    const p = b[fr][fc];
+    b[tr][tc] = p;
+    b[fr][fc] = EMPTY;
+    if (m.jumped) {
+        b[m.jumped[0]][m.jumped[1]] = EMPTY;
+    }
+    if (player === BLACK && tr === 7 && p === BLACK) b[tr][tc] = BLACK_KING;
+    if (player === RED && tr === 0 && p === RED) b[tr][tc] = RED_KING;
+}
+
+function evaluateBoard(b) {
+    let score = 0;
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const val = b[r][c];
+            if (val === EMPTY) continue;
+            let pieceVal = 0;
+            if (val === BLACK) pieceVal = 10 + r; // Öňe gidiş bonusy
+            else if (val === BLACK_KING) pieceVal = 25;
+            else if (val === RED) pieceVal = -(10 + (7 - r));
+            else if (val === RED_KING) pieceVal = -25;
+            score += pieceVal;
+        }
+    }
+    return score;
+}
+
+function minimax(b, depth, alpha, beta, isMaximizing) {
+    if (depth === 0) return evaluateBoard(b);
+
+    const player = isMaximizing ? BLACK : RED;
+    const { moves } = getAllPlayerMoves(b, player);
+
+    if (moves.length === 0) {
+        return isMaximizing ? -1000 : 1000;
+    }
+
+    if (isMaximizing) {
+        let maxEval = -Infinity;
+        for (const m of moves) {
+            const nextB = cloneBoard(b);
+            applyMoveToVirtualBoard(nextB, m, BLACK);
+            const ev = minimax(nextB, depth - 1, alpha, beta, false);
+            maxEval = Math.max(maxEval, ev);
+            alpha = Math.max(alpha, ev);
+            if (beta <= alpha) break;
+        }
+        return maxEval;
+    } else {
+        let minEval = Infinity;
+        for (const m of moves) {
+            const nextB = cloneBoard(b);
+            applyMoveToVirtualBoard(nextB, m, RED);
+            const ev = minimax(nextB, depth - 1, alpha, beta, true);
+            minEval = Math.min(minEval, ev);
+            beta = Math.min(beta, ev);
+            if (beta <= alpha) break;
+        }
+        return minEval;
+    }
+}
+
+function cloneBoard(b) {
+    return b.map(row => [...row]);
+}
+
+// ==========================================
+// 8. OÝUNY GUTARMAK & MASLAHAT & YZA ALMAK
+// ==========================================
+function checkGameEnd(player) {
+    const { moves } = getAllPlayerMoves(board, player);
+    if (moves.length === 0) {
+        const winner = (player === RED) ? BLACK : RED;
+        endGame(winner);
+        return true;
+    }
+    return false;
+}
+
+function endGame(winner) {
+    isGameOver = true;
+    playSound('win');
+    launchConfetti();
+
+    const modal = document.getElementById('win-modal');
+    const title = document.getElementById('win-title');
+    const desc = document.getElementById('win-desc');
+
+    if (winner === RED) {
+        title.textContent = t('winRed');
+        desc.textContent = t('winDesc');
+    } else {
+        title.textContent = (gameMode === 'bot') ? t('winBot') : t('winBlack');
+        desc.textContent = t('winDesc');
+    }
+
+    modal.classList.add('show');
+}
+
+function closeModalAndRestart() {
+    document.getElementById('win-modal').classList.remove('show');
+    initGame();
+}
+
+function restartGame() {
+    document.getElementById('win-modal').classList.remove('show');
+    initGame();
+}
+
+function saveSnapshot() {
+    moveHistory.push({
+        board: cloneBoard(board),
+        currentPlayer,
+        lastMoveCoords,
+        historyHTML: document.getElementById('history-box').innerHTML
+    });
+}
+
+function undoMove() {
+    if (isBotThinking || moveHistory.length === 0) return;
+
+    // Eger bot rejiminde bolsa we oýunçynyň gezegi bolsa: hem botuň, hem oýunçynyň göçümini yza al
+    if (gameMode === 'bot' && moveHistory.length >= 2 && currentPlayer === RED) {
+        moveHistory.pop(); // Botuňky
+        const prev = moveHistory.pop(); // Oýunçynyňky
+        restoreSnapshot(prev);
+    } else {
+        const prev = moveHistory.pop();
+        restoreSnapshot(prev);
+    }
+}
+
+function restoreSnapshot(snap) {
+    board = snap.board;
+    currentPlayer = snap.currentPlayer;
+    lastMoveCoords = snap.lastMoveCoords;
+    document.getElementById('history-box').innerHTML = snap.historyHTML;
+    selectedCoord = null;
+    currentValidMoves = [];
+    multiJumpPiece = null;
+    isGameOver = false;
+    isBotThinking = false;
+    document.getElementById('win-modal').classList.remove('show');
+    renderBoard();
+}
+
+function giveHint() {
+    if (isGameOver || isBotThinking || (gameMode === 'bot' && currentPlayer !== RED)) return;
+
+    const { moves } = getAllPlayerMoves(board, currentPlayer);
+    if (moves.length === 0) return;
+
+    // Iň gowy göçümi tap (iýýän bolsa ileri tut)
+    let best = moves.find(m => m.jumped !== null) || moves[0];
+    selectedCoord = best.from;
+    currentValidMoves = [best];
+    renderBoard();
+}
+
+function logHistoryMove(move, isCapture, becameKing) {
+    const box = document.getElementById('history-box');
+    if (box.children.length === 1 && box.children[0].textContent === t('noMoves')) {
+        box.innerHTML = '';
+    }
+
+    const fromStr = `${COLS[move.from[1]]}${8 - move.from[0]}`;
+    const toStr = `${COLS[move.to[1]]}${8 - move.to[0]}`;
+    const symbol = isCapture ? '✕' : '→';
+    const crown = becameKing ? ' 👑' : '';
+
+    const item = document.createElement('div');
+    item.className = `history-item ${currentPlayer === RED ? 'red' : 'black'}`;
+    item.innerHTML = `
+        <span>${currentPlayer === RED ? '🔴 Gyzyl' : '⚫ Gara'}</span>
+        <strong>${fromStr} ${symbol} ${toStr}${crown}</strong>
+    `;
+    box.appendChild(item);
+    box.scrollTop = box.scrollHeight;
+}
+
+function toggleForcedJump() {
+    forcedJump = !forcedJump;
+    updateLabels();
+    renderBoard();
+}
+
+function setGameMode(mode) {
+    gameMode = mode;
+    document.getElementById('mode-bot').classList.toggle('active', mode === 'bot');
+    document.getElementById('mode-pvp').classList.toggle('active', mode === 'pvp');
+    document.getElementById('diff-section').style.display = (mode === 'bot') ? 'block' : 'none';
+    updateLabels();
+    initGame();
+}
+
+function setDifficulty(lvl) {
+    botDifficulty = lvl;
+    [1, 2, 3].forEach(i => {
+        document.getElementById(`diff-${i}`).classList.toggle('active', i === lvl);
+    });
+}
+
+function updateLabels() {
+    document.getElementById('forced-label').textContent = forcedJump ? t('forcedOn') : t('forcedOff');
+    document.getElementById('name-black').textContent = (gameMode === 'bot') ? t('playerBot') : t('playerBlackPvp');
+    document.getElementById('name-red').textContent = t('playerRed');
+    document.getElementById('view-label').textContent = is3D ? t('view3d') : t('view2d');
+    document.getElementById('sound-label').textContent = soundEnabled ? t('soundOn') : t('soundOff');
+}
+
+// Konfetti effekti
+function launchConfetti() {
+    const colors = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#ffd700'];
+    for (let i = 0; i < 60; i++) {
+        setTimeout(() => {
+            const c = document.createElement('div');
+            c.className = 'confetti-particle';
+            c.style.left = Math.random() * 100 + 'vw';
+            c.style.width = (Math.random() * 10 + 6) + 'px';
+            c.style.height = (Math.random() * 10 + 6) + 'px';
+            c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+            c.style.animationDuration = (Math.random() * 2 + 2) + 's';
+            document.body.appendChild(c);
+            setTimeout(() => c.remove(), 4000);
+        }, i * 40);
+    }
+}
+
+// Başlangyç
+initGame();
+setLang('tk');
+</script>
+</body>
+</html>
